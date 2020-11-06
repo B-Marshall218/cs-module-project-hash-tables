@@ -13,6 +13,54 @@ class HashTableEntry:
 MIN_CAPACITY = 8
 
 
+class LinkedList:
+    def _init_(self):
+        self.head = None
+
+    def find(self, key):
+        # Start at the head
+        curr = self.head
+        # If curr has a value check:
+        while curr != None:
+            # If the curr = key then return key, youre done
+            if curr.key == key:
+                return curr
+            # Otherwise, curr now moves to next node
+            curr = curr.next
+        return None
+
+    def insert_at_head(self, node):
+        node.next = self.head
+        self.head = node
+
+    def insert_head_or_overwrite_value(self, node):
+        existingNode = self.find(node.key)
+        if existingNode != None:
+            existingNode.key = node.key
+        else:
+            self.insert_at_head(node)
+
+    def delete(self, key):
+        curr = self.head
+
+        # if we need to delete head
+        if curr.key == key:
+            self.head = curr.next
+            curr.next = None
+            return curr
+        prev = None
+
+        while curr != None:
+            if curr.key == key:
+                prev.next == curr.next
+                curr.next = None
+                return curr
+            else:
+                prev = curr
+                curr = curr.next
+        return None
+
+
 class HashTable:
     """
     A hash table that with `capacity` buckets
@@ -22,11 +70,14 @@ class HashTable:
     """
 
     def __init__(self, capacity):
-        # Your code here
+        # # Your code here
+        # self.capacity = MIN_CAPACITY
+        # # starting with 8 empty slots
+        # self.storage = [None] * 8
+        # self.count = 0
+
+        self.table = [None] * MIN_CAPACITY
         self.capacity = MIN_CAPACITY
-        # starting with 8 empty slots
-        self.storage = [None] * 8
-        self.count = 0
 
     def get_num_slots(self):
         """
@@ -39,7 +90,8 @@ class HashTable:
         Implement this.
         """
         # Your code here
-        return self.capacity
+        # return self.capacity
+        return len(self.table)
 
     def get_load_factor(self):
         """
@@ -94,18 +146,45 @@ class HashTable:
         Hash collisions should be handled with Linked List Chaining.
 
         Implement this.
+
+        to add to head: 
+
+        def insert_at_head(self, node):
+            node.next = self.head
+            self.head = node 
+
+        ______________________________
+
+        if you need to overwrite a node not in the head:
+            def instert_or_owverwrite_value(self, key):
+                node = self.find(key)
+
+                if node is None:
+                    (make new node)
+                    self.insert_at_head(Node(key))
+                else: 
+                    (overwrite old key)
+                    node.key = key
         """
         # Your code here
+        newNode = HashTableEntry(key, value)
+        i = self.hash_index(key)
+        if not self.table[i]:  # why [] and not () here
+            self.table[i] = LinkedList()
+        self.table[i].insert_head_or_overwrite_value(newNode)
 
-        new_node = HashTableEntry(key, value)
-        # # Creating new node with key value pair
-        index = self.hash_index(key)
-        # # assigning the index as within the range of hash table
-        if self.storage[index] == None:
-            self.storage[index] = new_node
-        # If there is nothing or room in storage, enter new node
-        elif self.storage[index].key == key:
-            self.storage[index].value = value
+        if self.get_load_factor() > .7:
+            self.resize(self.capacity * 2)
+
+        # new_node = HashTableEntry(key, value)
+        # # # Creating new node with key value pair
+        # index = self.hash_index(key)
+        # # # assigning the index as within the range of hash table
+        # if self.storage[index] == None:
+        #     self.storage[index] = new_node
+        # # If there is nothing or room in storage, enter new node
+        # elif self.storage[index].key == key:
+        #     self.storage[index].value = value
         # If the index already equals the key, return the value
 
     def delete(self, key):
@@ -117,10 +196,25 @@ class HashTable:
         Implement this.
         """
         # Your code here
-        index = self.hash_index(key)
+        # index = self.hash_index(key)
 
-        if self.storage[index].key == key:
-            self.storage[index] = None
+        # if self.storage[index].key == key:
+        #     self.storage[index] = None
+
+        # value = self.table[self.hash_index(key)]
+        # if value == None:
+        #     print("value is already None")
+        # self.table[self.hash_index(key)] = None
+
+        i = self.hash_index(key)
+        linkedL = self.table[i]
+        deleteNode = linkedL.delete(key)
+
+        if self.get_load_factor() < .2:
+            self.resize(self.capacity / 2)
+
+        if not deleteNode:
+            print(f"{key} not found")
 
     def get(self, key):
         """
@@ -131,12 +225,21 @@ class HashTable:
         Implement this.
         """
         # Your code here
-        # If index is equal to key, display value
-        index = self.hash_index(key)
 
-        if self.storage[index] != None:
-            if self.storage[index].key == key:
-                return self.storage[index].value
+        i = self.hash_index(key)
+        linkedL = self.table[i]
+        node = linkedL.find(key)
+
+        return node.value if node else None
+
+        # return self.table[self.hash_index(key)]
+
+        # # If index is equal to key, display value
+        # index = self.hash_index(key)
+
+        # if self.storage[index] != None:
+        #     if self.storage[index].key == key:
+        #         return self.storage[index].value
 
     def resize(self, new_capacity):
         """
@@ -146,6 +249,20 @@ class HashTable:
         Implement this.
         """
         # Your code here
+        # number of items / number of slots
+        # resize if over .7 downsize if under .2
+        newtable = HashTable(new_capacity if new_capacity >=
+                             MIN_CAPACITY else MIN_CAPACITY)
+        for slot in self.table:
+            if slot:
+                curr = slot.head
+                while curr:
+                    newtable.put(curr.key, curr.value)
+                    curr = curr.next
+
+        self.capacity = new_capacity
+        self.table = newtable.table
+
     pass
 
 
